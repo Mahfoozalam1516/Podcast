@@ -6,6 +6,7 @@ diffusers
 transformers
 controlnet-aux==0.0.6
 insightface
+opencv-python-headless
 opencv-python==4.8.1.78
 numpy
 Pillow
