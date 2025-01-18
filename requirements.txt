@@ -5,6 +5,7 @@ torchvision
 diffusers
 transformers
 controlnet-aux
+onnxruntime
 insightface
 opencv-python-headless
 numpy
