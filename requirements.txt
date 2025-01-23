@@ -15,3 +15,6 @@ soundfile
 scipy
 gdown
 huggingface_hub
+librosa
+numba
+llvmlite
