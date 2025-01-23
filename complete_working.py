@@ -21,6 +21,7 @@ import shlex
 import sys
 import importlib
 from pathlib import Path
+from huggingface_hub import hf_hub_download
 
 # Text-to-Speech Constants
 VOICES = {
@@ -464,9 +465,10 @@ def main():
         if generate_button:
             with st.spinner("Generating your avatar..."):
                 try:
-                    model_path = st.session_state.get("model_path", "models/Merged_JuggernautXL_Realistic_Vision.safetensors")
-                    controlnet_path = st.session_state.get("controlnet_path", "lllyasviel/sd-controlnet-canny")
-                    face_swap_path = st.session_state.get("face_swap_path", "models/inswapper_128.onnx")
+                    # Download models from Hugging Face
+                    model_path = hf_hub_download(repo_id="Dadnoodeveloper/Merged_JuggernautXL_Realistic_Vision", filename="Merged_JuggernautXL_Realistic_Vision.safetensors")
+                    controlnet_path = "lllyasviel/sd-controlnet-canny"
+                    face_swap_path = hf_hub_download(repo_id="Dadnoodeveloper/inswapper_128", filename="inswapper_128.onnx")
 
                     if style_reference is not None:
                         images = generate_avatar_with_controlnet(
@@ -530,8 +532,8 @@ def main():
         st.write("Generate lip-synced videos from either images or videos")
 
         # Initialize Wav2Lip
-        wav2lip_path = st.session_state.get("wav2lip_path", "checkpoints/wav2lip.pth")
-        wav2lip_gan_path = st.session_state.get("wav2lip_gan_path", "checkpoints/wav2lip_gan.pth")
+        wav2lip_path = hf_hub_download(repo_id="Dadnoodeveloper/Checkpoints", filename="wav2lip.pth")
+        wav2lip_gan_path = hf_hub_download(repo_id="Dadnoodeveloper/Checkpoints", filename="wav2lip_gan.pth")
         wav2lip = Wav2LipInference(wav2lip_path, wav2lip_gan_path)
 
         # Input type selection
@@ -624,30 +626,116 @@ def main():
     # Model Management Tab
     with tab4:
         st.title("Model Management")
-        st.write("Specify the paths for the required models.")
+        st.write("Specify the paths for the required models or upload them directly (up to 5 GB).")
 
         # Model Path Inputs
         st.subheader("Model Paths")
-        model_path = st.text_input(
-            "Path to Merged_JuggernautXL_Realistic_Vision.safetensors",
-            value="models/Merged_JuggernautXL_Realistic_Vision.safetensors"
+        
+        # Option to upload or specify path for each model
+        model_path_option = st.radio(
+            "Choose how to provide the Merged_JuggernautXL_Realistic_Vision.safetensors model:",
+            ["Specify Path", "Upload File"]
         )
-        controlnet_path = st.text_input(
-            "Path to ControlNet Model",
-            value="lllyasviel/sd-controlnet-canny"
+        if model_path_option == "Specify Path":
+            model_path = st.text_input(
+                "Path to Merged_JuggernautXL_Realistic_Vision.safetensors",
+                value="models/Merged_JuggernautXL_Realistic_Vision.safetensors"
+            )
+        else:
+            model_file = st.file_uploader(
+                "Upload Merged_JuggernautXL_Realistic_Vision.safetensors (up to 5 GB)",
+                type=["safetensors"],
+                key="model_file"
+            )
+            if model_file:
+                model_path = os.path.join("models", model_file.name)
+                with open(model_path, "wb") as f:
+                    f.write(model_file.getbuffer())
+                st.success(f"Model uploaded successfully to {model_path}")
+
+        controlnet_path_option = st.radio(
+            "Choose how to provide the ControlNet Model:",
+            ["Specify Path", "Upload File"]
         )
-        face_swap_path = st.text_input(
-            "Path to inswapper_128.onnx",
-            value="models/inswapper_128.onnx"
+        if controlnet_path_option == "Specify Path":
+            controlnet_path = st.text_input(
+                "Path to ControlNet Model",
+                value="lllyasviel/sd-controlnet-canny"
+            )
+        else:
+            controlnet_file = st.file_uploader(
+                "Upload ControlNet Model (up to 5 GB)",
+                type=["pth", "ckpt"],
+                key="controlnet_file"
+            )
+            if controlnet_file:
+                controlnet_path = os.path.join("models", controlnet_file.name)
+                with open(controlnet_path, "wb") as f:
+                    f.write(controlnet_file.getbuffer())
+                st.success(f"ControlNet Model uploaded successfully to {controlnet_path}")
+
+        face_swap_path_option = st.radio(
+            "Choose how to provide the inswapper_128.onnx model:",
+            ["Specify Path", "Upload File"]
         )
-        wav2lip_path = st.text_input(
-            "Path to wav2lip.pth",
-            value="checkpoints/wav2lip.pth"
+        if face_swap_path_option == "Specify Path":
+            face_swap_path = st.text_input(
+                "Path to inswapper_128.onnx",
+                value="models/inswapper_128.onnx"
+            )
+        else:
+            face_swap_file = st.file_uploader(
+                "Upload inswapper_128.onnx (up to 5 GB)",
+                type=["onnx"],
+                key="face_swap_file"
+            )
+            if face_swap_file:
+                face_swap_path = os.path.join("models", face_swap_file.name)
+                with open(face_swap_path, "wb") as f:
+                    f.write(face_swap_file.getbuffer())
+                st.success(f"Face Swap Model uploaded successfully to {face_swap_path}")
+
+        wav2lip_path_option = st.radio(
+            "Choose how to provide the wav2lip.pth model:",
+            ["Specify Path", "Upload File"]
         )
-        wav2lip_gan_path = st.text_input(
-            "Path to wav2lip_gan.pth",
-            value="checkpoints/wav2lip_gan.pth"
+        if wav2lip_path_option == "Specify Path":
+            wav2lip_path = st.text_input(
+                "Path to wav2lip.pth",
+                value="checkpoints/wav2lip.pth"
+            )
+        else:
+            wav2lip_file = st.file_uploader(
+                "Upload wav2lip.pth (up to 5 GB)",
+                type=["pth"],
+                key="wav2lip_file"
+            )
+            if wav2lip_file:
+                wav2lip_path = os.path.join("checkpoints", wav2lip_file.name)
+                with open(wav2lip_path, "wb") as f:
+                    f.write(wav2lip_file.getbuffer())
+                st.success(f"Wav2Lip Model uploaded successfully to {wav2lip_path}")
+
+        wav2lip_gan_path_option = st.radio(
+            "Choose how to provide the wav2lip_gan.pth model:",
+            ["Specify Path", "Upload File"]
         )
+        if wav2lip_gan_path_option == "Specify Path":
+            wav2lip_gan_path = st.text_input(
+                "Path to wav2lip_gan.pth",
+                value="checkpoints/wav2lip_gan.pth"
+            )
+        else:
+            wav2lip_gan_file = st.file_uploader(
+                "Upload wav2lip_gan.pth (up to 5 GB)",
+                type=["pth"],
+                key="wav2lip_gan_file"
+            )
+            if wav2lip_gan_file:
+                wav2lip_gan_path = os.path.join("checkpoints", wav2lip_gan_file.name)
+                with open(wav2lip_gan_path, "wb") as f:
+                    f.write(wav2lip_gan_file.getbuffer())
+                st.success(f"Wav2Lip GAN Model uploaded successfully to {wav2lip_gan_path}")
 
         # Save paths to session state
         if st.button("Save Model Paths"):
